@@ -2,16 +2,31 @@ import os
 import sqlite3
 from generate_data import create_db, populate_db, check_db
 
-# Function to execute SQL queries from a file
+ # Function to execute SQL queries from a file
 def execute_sql_from_file(file_path, conn, params=None):
-    with open(file_path, 'r') as query_file:
-        query = query_file.read()
-        cursor = conn.cursor()
-        if params:
-            cursor.execute(query, params)
-        else:
-            cursor.execute(query)
-        return cursor.fetchall()
+    try:
+        with open(file_path, 'r') as query_file:
+            return _extracted_from_execute_sql_from_file_4(query_file, conn, params)
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        return None
+
+
+# TODO Rename this here and in `execute_sql_from_file`
+def _extracted_from_execute_sql_from_file_4(query_file, conn, params):
+    query = query_file.read()
+    print("Executing query:")
+    print(query)
+    cursor = conn.cursor()
+    if params:
+        cursor.execute(query, params)
+    else:
+        cursor.execute(query)
+    results = cursor.fetchall()
+    print("Query executed successfully.")
+    return results
+
+
 
 def choose_subject_or_group(con, task_number):
     if task_number in [2, 3, 7]:
@@ -94,8 +109,9 @@ if __name__ == "__main__":
                     # Add code to execute and print task 1 results here
                     with sqlite3.connect('university.db') as con:
                         query_file_path = os.path.join(sql_queries_directory, 'query_1.sql')
+                        print(f"Query file path: {query_file_path}")  # Add this line for debugging
                         results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
+                        print("Number of rows returned:", len(results))
                         for result in results:
                             print(result)
                 elif task_number == 4:
