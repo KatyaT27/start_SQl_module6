@@ -2,7 +2,7 @@ import os
 import sqlite3
 from generate_data import create_db, populate_db, check_db
 
- # Function to execute SQL queries from a file
+# Function to execute SQL queries from a file
 def execute_sql_from_file(file_path, conn, params=None):
     try:
         with open(file_path, 'r') as query_file:
@@ -11,8 +11,7 @@ def execute_sql_from_file(file_path, conn, params=None):
         print(f"Error executing query: {e}")
         return None
 
-
-# TODO Rename this here and in `execute_sql_from_file`
+# Helper function to execute SQL queries
 def _extracted_from_execute_sql_from_file_4(query_file, conn, params):
     query = query_file.read()
     print("Executing query:")
@@ -26,8 +25,7 @@ def _extracted_from_execute_sql_from_file_4(query_file, conn, params):
     print("Query executed successfully.")
     return results
 
-
-
+# Function to choose subject or group based on the task number
 def choose_subject_or_group(con, task_number):
     if task_number in [2, 3, 7]:
         # Fetch available subjects from the database
@@ -99,66 +97,10 @@ if __name__ == "__main__":
                         print(query_file.read())
 
                     with sqlite3.connect('university.db') as con:
-                        if subject_or_group := choose_subject_or_group(con, task_number):
-                            params = (subject_or_group,)
-                            results = execute_sql_from_file(query_file_path, con, params)
-                            print("Результат:")
-                            for result in results:
-                                print(result)
-                elif task_number == 1:
-                    # Add code to execute and print task 1 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_1.sql')
-                        print(f"Query file path: {query_file_path}")  # Add this line for debugging
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Number of rows returned:", len(results))
-                        for result in results:
-                            print(result)
-                elif task_number == 4:
-                    # Add code to execute and print task 4 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_4.sql')
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
-                        for result in results:
-                            print(result)
-                elif task_number == 5:
-                    # Add code to execute and print task 5 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_5.sql')
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
-                        for result in results:
-                            print(result)
-                elif task_number == 6:
-                    # Add code to execute and print task 6 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_6.sql')
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
-                        for result in results:
-                            print(result)
-                elif task_number == 8:
-                    # Add code to execute and print task 8 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_8.sql')
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
-                        for result in results:
-                            print(result)
-                elif task_number == 9:
-                    # Add code to execute and print task 9 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_9.sql')
-                        results = execute_sql_from_file(query_file_path, con)
-                        print("Результат:")
-                        for result in results:
-                            print(result)
-                elif task_number == 10:
-                    # Add code to execute and print task 10 results here
-                    with sqlite3.connect('university.db') as con:
-                        query_file_path = os.path.join(sql_queries_directory, 'query_10.sql')
-                        results = execute_sql_from_file(query_file_path, con)
+                        subject_or_group = choose_subject_or_group(con, task_number)
+                        params = (subject_or_group,) if subject_or_group is not None else None
+
+                        results = execute_sql_from_file(query_file_path, con, params)
                         print("Результат:")
                         for result in results:
                             print(result)
