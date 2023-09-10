@@ -1,78 +1,110 @@
-import sqlite3
+import itertools
 from faker import Faker
+import sqlite3
 import random
-import datetime
 
 fake = Faker()
 
 
 def create_db():
-    with open('init_db.sql', 'r') as f:
-        sql = f.read()
+    conn = sqlite3.connect('university.db')
+    cur = conn.cursor()
 
-    with sqlite3.connect('university.db') as con:
-        cur = con.cursor()
-        cur.executescript(sql)
+    cur.execute('''CREATE TABLE IF NOT EXISTS students
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    group_id INTEGER NOT NULL,
+                    birthdate DATE NOT NULL);''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS groups
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    course INTEGER NOT NULL);''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS teachers
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL);''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS subjects
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    teacher_id INTEGER NOT NULL,
+                    FOREIGN KEY (teacher_id) REFERENCES teachers(id));''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS grades
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id INTEGER NOT NULL,
+                    subject_id INTEGER NOT NULL,
+                    grade REAL NOT NULL,
+                    date DATE NOT NULL,
+                    FOREIGN KEY (student_id) REFERENCES students(id),
+                    FOREIGN KEY (subject_id) REFERENCES subjects(id));''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS courses
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    teacher_id INTEGER NOT NULL,
+                    FOREIGN KEY (teacher_id) REFERENCES teachers(id));''')
+
+    conn.commit()
+    conn.close()
 
 
 def populate_db():
-    # Create students
-    student_data = [(fake.name(),) for _ in range(30)]
-    group_data = [(fake.unique.random_number(digits=4),)
-                  for _ in range(3)]  # Generate unique group IDs
-    teacher_data = [(fake.name(),) for _ in range(3)]
+    conn = sqlite3.connect('university.db')
+    cur = conn.cursor()
 
-    # Create subjects with random teacher assignments
-    subject_data = [(fake.word(), random.randint(1, 3)) for _ in range(5)]
+    for _ in range(30):
+        cur.execute("INSERT INTO students (name, group_id, birthdate) VALUES (?, ?, ?)",
+                    (fake.unique.first_name(), random.randint(1, 3), fake.date_of_birth(minimum_age=18, maximum_age=30)))
 
-    with sqlite3.connect('university.db') as con:
-        cur = con.cursor()
+    for _ in range(3):
+        cur.execute("INSERT INTO groups (name, course) VALUES (?, ?)",
+                    (fake.unique.word(ext_word_list=None), random.randint(1, 4)))
 
-        # Create students
-        cur.executemany(
-            "INSERT INTO students (student_name) VALUES (?);", student_data)
+    for _ in range(5):
+        cur.execute("INSERT INTO teachers (name) VALUES (?)",
+                    (fake.unique.first_name(),))
 
-        # Create groups
-        cur.executemany(
-            "INSERT INTO groups (group_name) VALUES (?);", group_data)
+    for _ in range(8):
+        cur.execute("INSERT INTO subjects (name, teacher_id) VALUES (?, ?)",
+                    (fake.unique.word(ext_word_list=None), random.randint(1, 5)))
 
-        # Create teachers
-        cur.executemany(
-            "INSERT INTO teachers (teacher_name) VALUES (?);", teacher_data)
+    for _ in range(10):  # You can adjust the number of courses to populate
+        cur.execute("INSERT INTO courses (name, teacher_id) VALUES (?, ?)",
+                    (fake.unique.word(ext_word_list=None), random.randint(1, 5)))
 
-        # Create subjects with random teacher assignments
-        cur.executemany(
-            "INSERT INTO subjects (subject_name, teacher_id) VALUES (?, ?);", subject_data)
+    for student_id, subject_id in itertools.product(range(1, 31), range(1, 9)):
+        cur.execute("INSERT INTO grades (student_id, subject_id, grade, date) VALUES (?, ?, ?, ?)",
+                    (student_id, subject_id, round(random.uniform(2, 5), 2), fake.date_between(start_date='-1y', end_date='today')))
 
-        # Create student grades for each student and subject
-        for student_id in range(1, 31):
-            for subject_id in range(1, 6):
-                grades = [(student_id, subject_id, random.randint(1, 5), fake.date_between(
-                    start_date='-1y', end_date='today')) for _ in range(20)]
-                cur.executemany(
-                    "INSERT INTO student_grades (student_id, subject_id, grade, date_received) VALUES (?, ?, ?, ?);", grades)
+    conn.commit()
+    conn.close()
 
 
 def check_db():
-    with sqlite3.connect('university.db') as con:
-        cur = con.cursor()
-        _extracted_from_check_db_4(cur, "SELECT * FROM students;", "Students:")
-        _extracted_from_check_db_4(cur, "SELECT * FROM groups;", "\nGroups:")
-        _extracted_from_check_db_4(
-            cur, "SELECT * FROM teachers;", "\nTeachers:")
-        _extracted_from_check_db_4(
-            cur, "SELECT * FROM subjects;", "\nSubjects:")
-        _extracted_from_check_db_4(
-            cur, "SELECT * FROM student_grades;", "\nGrades:")
+    conn = sqlite3.connect('university.db')
+    cur = conn.cursor()
 
+    cur.execute("SELECT * FROM students")
+    print(cur.fetchall())
 
-def _extracted_from_check_db_4(cur, arg1, arg2):
-    cur.execute(arg1)
-    students = cur.fetchall()
-    print(arg2)
-    for student in students:
-        print(student)
+    cur.execute("SELECT * FROM groups")
+    print(cur.fetchall())
 
+    cur.execute("SELECT * FROM teachers")
+    print(cur.fetchall())
+
+    cur.execute("SELECT * FROM subjects")
+    print(cur.fetchall())
+
+    cur.execute("SELECT * FROM grades LIMIT 2")
+    print(cur.fetchall())
+
+    cur.execute("SELECT * FROM courses LIMIT 2")
+    print(cur.fetchall())
+
+    conn.close()
 
 if __name__ == "__main__":
     create_db()
